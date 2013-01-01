@@ -7,6 +7,7 @@
 package org.mozilla.javascript;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * <p>This class represents a string composed of two components, each of which
@@ -30,23 +31,13 @@ public class ConsString implements CharSequence, Serializable {
 
     private CharSequence s1, s2;
     private final int length;
-    private int depth;
+    private boolean flat;
 
     public ConsString(CharSequence str1, CharSequence str2) {
         s1 = str1;
         s2 = str2;
         length = str1.length() + str2.length();
-        depth = 1;
-        if (str1 instanceof ConsString) {
-            depth += ((ConsString)str1).depth;
-        }
-        if (str2 instanceof ConsString) {
-            depth += ((ConsString)str2).depth;
-        }
-        // Don't let it grow too deep, can cause stack overflows
-        if (depth > 2000) {
-            flatten();
-        }
+        flat = false;
     }
 
     // Replace with string representation when serializing
@@ -55,31 +46,39 @@ public class ConsString implements CharSequence, Serializable {
     }
     
     public String toString() {
-        return depth == 0 ? (String)s1 : flatten();
+        return flat ? (String)s1 : flatten();
     }
 
     private synchronized String flatten() {
-        if (depth > 0) {
-            StringBuilder b = new StringBuilder(length);
-            appendTo(b);
-            s1 = b.toString();
+        if (!flat) {
+            s1 = flattenInternal();
             s2 = "";
-            depth = 0;
+            flat = true;
         }
         return (String)s1;
     }
 
-    private synchronized void appendTo(StringBuilder b) {
-        appendFragment(s1, b);
-        appendFragment(s2, b);
-    }
+    private synchronized String flattenInternal() {
+        char[] chars = new char[length];
+        ArrayList<CharSequence> stack = new ArrayList<CharSequence>();
+        stack.add(s1);
+        CharSequence cs = s2;
+        int begin = length;
 
-    private static void appendFragment(CharSequence s, StringBuilder b) {
-        if (s instanceof ConsString) {
-            ((ConsString)s).appendTo(b);
-        } else {
-            b.append(s);
+        while (true) {
+            if (cs instanceof ConsString) {
+                stack.add(((ConsString)cs).s1);
+                cs = ((ConsString)cs).s2;
+            } else {
+                begin -= cs.length();
+                ((String)cs).getChars(0, cs.length(), chars, begin);
+                if (stack.isEmpty()) {
+                    break;
+                }
+                cs = stack.remove(stack.size()-1);
+            }
         }
+        return new String(chars);
     }
 
     public int length() {
@@ -87,12 +86,12 @@ public class ConsString implements CharSequence, Serializable {
     }
 
     public char charAt(int index) {
-        String str = depth == 0 ? (String)s1 : flatten();
+        String str = flat ? (String)s1 : flatten();
         return str.charAt(index);
     }
 
     public CharSequence subSequence(int start, int end) {
-        String str = depth == 0 ? (String)s1 : flatten();
+        String str = flat ? (String)s1 : flatten();
         return str.substring(start, end);
     }
 
