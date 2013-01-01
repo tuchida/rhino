@@ -31,13 +31,23 @@ public class ConsString implements CharSequence, Serializable {
 
     private CharSequence s1, s2;
     private final int length;
-    private boolean flat;
+    private int depth;
 
     public ConsString(CharSequence str1, CharSequence str2) {
         s1 = str1;
         s2 = str2;
         length = str1.length() + str2.length();
-        flat = false;
+        depth = 1;
+        if (str1 instanceof ConsString) {
+            depth += ((ConsString)str1).depth;
+        }
+        if (str2 instanceof ConsString) {
+            depth += ((ConsString)str2).depth;
+        }
+        // Don't let it grow too deep, can cause out of memory
+        if (depth > 2000) {
+            flatten();
+        }
     }
 
     // Replace with string representation when serializing
@@ -46,14 +56,14 @@ public class ConsString implements CharSequence, Serializable {
     }
     
     public String toString() {
-        return flat ? (String)s1 : flatten();
+        return depth == 0 ? (String)s1 : flatten();
     }
 
     private synchronized String flatten() {
-        if (!flat) {
+        if (depth != 0) {
             s1 = flattenInternal();
             s2 = "";
-            flat = true;
+            depth = 0;
         }
         return (String)s1;
     }
@@ -86,12 +96,12 @@ public class ConsString implements CharSequence, Serializable {
     }
 
     public char charAt(int index) {
-        String str = flat ? (String)s1 : flatten();
+        String str = depth == 0 ? (String)s1 : flatten();
         return str.charAt(index);
     }
 
     public CharSequence subSequence(int start, int end) {
-        String str = flat ? (String)s1 : flatten();
+        String str = depth == 0 ? (String)s1 : flatten();
         return str.substring(start, end);
     }
 
