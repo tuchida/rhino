@@ -29,23 +29,37 @@ public class ConsString implements CharSequence, Serializable {
 
     private static final long serialVersionUID = -8432806714471372570L;
 
-    private CharSequence s1, s2;
+    private CharSequence left, right;
     private final int length;
-    private int depth;
 
-    public ConsString(CharSequence str1, CharSequence str2) {
-        s1 = str1;
-        s2 = str2;
-        length = str1.length() + str2.length();
-        depth = 1;
-        if (str1 instanceof ConsString) {
-            depth += ((ConsString)str1).depth;
+    /**
+     * Number of ConsString (other than flattened) in left and right.
+     */
+    private int consCount;
+
+    /**
+     * Maximum of number of right edges in path traversed from root to leaf.
+     */
+    private int maxRightEdge;
+
+    public ConsString(CharSequence left, CharSequence right) {
+        this.left = left;
+        this.right = right;
+        length = left.length() + right.length();
+        consCount = 1;
+        int leftRightEdge = 0;
+        int rightRightEdge = 1;
+        if (left instanceof ConsString) {
+            consCount += ((ConsString)left).consCount;
+            leftRightEdge += ((ConsString)left).maxRightEdge;
         }
-        if (str2 instanceof ConsString) {
-            depth += ((ConsString)str2).depth;
+        if (right instanceof ConsString) {
+            consCount += ((ConsString)right).consCount;
+            rightRightEdge += ((ConsString)right).maxRightEdge;
         }
+        maxRightEdge = leftRightEdge < rightRightEdge ? rightRightEdge : leftRightEdge;
         // Don't let it grow too deep, can cause out of memory
-        if (depth > 2000) {
+        if (consCount > 2000) {
             flatten();
         }
     }
@@ -56,36 +70,39 @@ public class ConsString implements CharSequence, Serializable {
     }
     
     public String toString() {
-        return depth == 0 ? (String)s1 : flatten();
+        return consCount == 0 ? (String)left : flatten();
     }
 
     private synchronized String flatten() {
-        if (depth != 0) {
-            s1 = flattenInternal();
-            s2 = "";
-            depth = 0;
+        if (consCount != 0) {
+            left = flattenInternal();
+            right = "";
+            consCount = 0;
+            maxRightEdge = 0;
         }
-        return (String)s1;
+        return (String)left;
     }
 
     private synchronized String flattenInternal() {
         char[] chars = new char[length];
-        ArrayDeque<CharSequence> stack = new ArrayDeque<CharSequence>();
-        stack.addLast(s1);
-        CharSequence cs = s2;
+        // necessary to add 1 when leaf is ConsString, 
+        CharSequence[] stack = new CharSequence[maxRightEdge + 1];
+        int stackPos = 0;
+        stack[stackPos++] = left;
+        CharSequence cs = right;
         int begin = length;
 
         while (true) {
             if (cs instanceof ConsString) {
-                stack.addLast(((ConsString)cs).s1);
-                cs = ((ConsString)cs).s2;
+                stack[stackPos++] = ((ConsString)cs).left;
+                cs = ((ConsString)cs).right;
             } else {
                 begin -= cs.length();
                 ((String)cs).getChars(0, cs.length(), chars, begin);
-                if (stack.isEmpty()) {
+                if (stackPos == 0) {
                     break;
                 }
-                cs = stack.pollLast();
+                cs = stack[--stackPos];
             }
         }
         return new String(chars);
@@ -96,12 +113,12 @@ public class ConsString implements CharSequence, Serializable {
     }
 
     public char charAt(int index) {
-        String str = depth == 0 ? (String)s1 : flatten();
+        String str = consCount == 0 ? (String)left : flatten();
         return str.charAt(index);
     }
 
     public CharSequence subSequence(int start, int end) {
-        String str = depth == 0 ? (String)s1 : flatten();
+        String str = consCount == 0 ? (String)left : flatten();
         return str.substring(start, end);
     }
 
