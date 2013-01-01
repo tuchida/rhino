@@ -7,7 +7,7 @@
 package org.mozilla.javascript;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 
 /**
  * <p>This class represents a string composed of two components, each of which
@@ -70,14 +70,14 @@ public class ConsString implements CharSequence, Serializable {
 
     private synchronized String flattenInternal() {
         char[] chars = new char[length];
-        ArrayList<CharSequence> stack = new ArrayList<CharSequence>();
-        stack.add(s1);
+        ArrayDeque<CharSequence> stack = new ArrayDeque<CharSequence>();
+        stack.addLast(s1);
         CharSequence cs = s2;
         int begin = length;
 
         while (true) {
             if (cs instanceof ConsString) {
-                stack.add(((ConsString)cs).s1);
+                stack.addLast(((ConsString)cs).s1);
                 cs = ((ConsString)cs).s2;
             } else {
                 begin -= cs.length();
@@ -85,7 +85,7 @@ public class ConsString implements CharSequence, Serializable {
                 if (stack.isEmpty()) {
                     break;
                 }
-                cs = stack.remove(stack.size()-1);
+                cs = stack.pollLast();
             }
         }
         return new String(chars);
