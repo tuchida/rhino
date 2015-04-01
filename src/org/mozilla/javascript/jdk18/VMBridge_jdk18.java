@@ -7,6 +7,7 @@
 package org.mozilla.javascript.jdk18;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import org.mozilla.javascript.*;
 
@@ -27,7 +28,7 @@ public class VMBridge_jdk18 extends org.mozilla.javascript.jdk15.VMBridge_jdk15
         if (length > 1) {
             ArrayList<Method> abstractMethods = new ArrayList<Method>();
             for (Method m : methods) {
-                if (!m.isDefault()) {
+                if (!m.isDefault() && !Modifier.isStatic(m.getModifiers())) {
                     abstractMethods.add(m);
                 }
             }
