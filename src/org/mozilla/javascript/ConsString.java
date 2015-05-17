@@ -61,25 +61,25 @@ public class ConsString implements CharSequence, Serializable {
 
     private synchronized String flatten() {
         if (depth > 0) {
-            StringBuilder b = new StringBuilder(length);
-            appendTo(b);
-            s1 = b.toString();
+            char[] buf = new char[length];
+            appendTo(buf, 0);
+            s1 = new String(buf);
             s2 = "";
             depth = 0;
         }
         return (String)s1;
     }
 
-    private synchronized void appendTo(StringBuilder b) {
-        appendFragment(s1, b);
-        appendFragment(s2, b);
+    private synchronized void appendTo(char[] buf, int i) {
+        appendFragment(s1, buf, i);
+        appendFragment(s2, buf, i + s1.length());
     }
 
-    private static void appendFragment(CharSequence s, StringBuilder b) {
+    private static void appendFragment(CharSequence s, char[] buf, int i) {
         if (s instanceof ConsString) {
-            ((ConsString)s).appendTo(b);
+            ((ConsString)s).appendTo(buf, i);
         } else {
-            b.append(s);
+            s.toString().getChars(0, s.length(), buf, i);
         }
     }
 
