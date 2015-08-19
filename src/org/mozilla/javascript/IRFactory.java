@@ -875,8 +875,18 @@ public final class IRFactory extends Parser
                 } else if (prop.isNormalMethod()) {
                     decompiler.addToken(Token.METHOD);
                 }
+                if (prop.isComputed()) {
+                    decompiler.addToken(Token.LB);
+                }
 
-                properties[i++] = getPropKey(prop.getLeft());
+                if (prop.isComputed()) {
+                    properties[i++] = transform(prop.getLeft());
+                } else {
+                    properties[i++] = getPropKey(prop.getLeft());
+                }
+                if (prop.isComputed()) {
+                    decompiler.addToken(Token.RB);
+                }
 
                 // OBJECTLIT is used as ':' in object literal for
                 // decompilation to solve spacing ambiguity.
@@ -900,6 +910,7 @@ public final class IRFactory extends Parser
             }
         }
         decompiler.addToken(Token.RC);
+        // TODO : add Node tree for computed property name.
         object.putProp(Node.OBJECT_IDS_PROP, properties);
         return object;
     }

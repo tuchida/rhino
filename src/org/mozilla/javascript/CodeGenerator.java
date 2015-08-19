@@ -1082,9 +1082,30 @@ class CodeGenerator extends Icode {
         } else {
             throw badTree(node);
         }
+        if (type == Token.OBJECTLIT) {
+            addIndexOp(Icode_LITERAL_KEY_NEW, count);
+            stackChange(1);
+        }
         addIndexOp(Icode_LITERAL_NEW, count);
         stackChange(2);
+        int i = 0;
         while (child != null) {
+            if (type == Token.OBJECTLIT) {
+                Object id = propertyIds[i++];
+                if (id instanceof String) {
+                    addStringOp(Token.STRING, (String)id);
+                    stackChange(1);
+                } else if (id instanceof Number) {
+                    int index = getDoubleIndex(((Number)id).doubleValue());
+                    addIndexOp(Token.NUMBER, index);
+                    stackChange(1);
+                } else {
+                    visitExpression((Node)id, 0);
+                }
+                addIcode(Icode_LITERAL_KEY_SET);
+                stackChange(-1);
+            }
+
             int childType = child.getType();
             if (childType == Token.GET) {
                 visitExpression(child.getFirstChild(), 0);
@@ -1111,12 +1132,13 @@ class CodeGenerator extends Icode {
                 literalIds.add(skipIndexes);
                 addIndexOp(Icode_SPARE_ARRAYLIT, index);
             }
+            stackChange(-1);
         } else {
             int index = literalIds.size();
             literalIds.add(propertyIds);
             addIndexOp(Token.OBJECTLIT, index);
+            stackChange(-2);
         }
-        stackChange(-1);
     }
 
     private void visitArrayComprehension(Node node, Node initStmt, Node expr)

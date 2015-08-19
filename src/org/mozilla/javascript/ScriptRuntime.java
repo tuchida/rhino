@@ -1443,6 +1443,15 @@ public class ScriptRuntime {
         }
     }
 
+    public static Object toPropertyKey(Object elem, Context cx) {
+        String s = toStringIdOrIndex(cx, elem);
+        if (s != null) {
+            return s;
+        }
+        return lastIndexResult(cx);
+    }
+
+
     /**
      * Call obj.[[Get]](id)
      *

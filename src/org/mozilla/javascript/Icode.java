@@ -135,8 +135,12 @@ abstract class Icode {
 
        Icode_DEBUGGER                   = -64,
 
+    // Object Literal Key (for Computed property name)
+       Icode_LITERAL_KEY_NEW            = -65,
+       Icode_LITERAL_KEY_SET            = -66,
+
        // Last icode
-        MIN_ICODE                       = -64;
+        MIN_ICODE                       = -66;
 
     static String bytecodeName(int bytecode)
     {
@@ -217,6 +221,8 @@ abstract class Icode {
           case Icode_GENERATOR:        return "GENERATOR";
           case Icode_GENERATOR_END:    return "GENERATOR_END";
           case Icode_DEBUGGER:         return "DEBUGGER";
+          case Icode_LITERAL_KEY_NEW:  return "LITERAL_KEY_NEW";
+          case Icode_LITERAL_KEY_SET:  return "LITERAL_KEY_SET";
         }
 
         // icode without name

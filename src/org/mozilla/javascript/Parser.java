@@ -3327,10 +3327,9 @@ public class Parser
         }
     }
 
-    private static final int PROP_ENTRY   = 1;
-    private static final int GET_ENTRY    = 2;
-    private static final int SET_ENTRY    = 4;
-    private static final int METHOD_ENTRY = 8;
+    private enum PropertyEntryKind {
+        LITERAL, GET, SET, METHOD
+    }
 
     private ObjectLiteral objectLiteral()
         throws IOException
@@ -3349,7 +3348,7 @@ public class Parser
       commaLoop:
         for (;;) {
             String propertyName = null;
-            int entryKind = PROP_ENTRY;
+            PropertyEntryKind entryKind = PropertyEntryKind.LITERAL;
             int tt = peekToken();
             Comment jsdocNode = getAndResetJsDoc();
 
@@ -3358,7 +3357,7 @@ public class Parser
                     warnTrailingComma(pos, elems, afterComma);
                 break commaLoop;
             } else {
-                AstNode pname = objliteralProperty();
+                ObjectPropertyName pname = objliteralProperty();
                 if (pname == null) {
                     propertyName = null;
                     reportError("msg.bad.prop");
@@ -3381,15 +3380,15 @@ public class Parser
                             && peeked != Token.RC)
                     {
                         if (peeked == Token.LP) {
-                            entryKind = METHOD_ENTRY;
-                        } else if (pname.getType() == Token.NAME) {
+                            entryKind = PropertyEntryKind.METHOD;
+                        } else if (!pname.computed && pname.name.getType() == Token.NAME) {
                             if ("get".equals(propertyName)) {
-                                entryKind = GET_ENTRY;
+                                entryKind = PropertyEntryKind.GET;
                             } else if ("set".equals(propertyName)) {
-                                entryKind = SET_ENTRY;
+                                entryKind = PropertyEntryKind.SET;
                             }
                         }
-                        if (entryKind == GET_ENTRY || entryKind == SET_ENTRY) {
+                        if (entryKind == PropertyEntryKind.GET || entryKind == PropertyEntryKind.SET) {
                             pname = objliteralProperty();
                             if (pname == null) {
                                 reportError("msg.bad.prop");
@@ -3401,21 +3400,24 @@ public class Parser
                         } else {
                             propertyName = ts.getString();
                             ObjectProperty objectProp = methodDefinition(
-                                    ppos, pname, entryKind);
-                            pname.setJsDocNode(jsdocNode);
+                                    ppos, pname.name, entryKind);
+                            pname.name.setJsDocNode(jsdocNode);
+                            objectProp.setComputed(pname.computed);
                             elems.add(objectProp);
                         }
                     } else {
-                        pname.setJsDocNode(jsdocNode);
-                        elems.add(plainProperty(pname, tt));
+                        pname.name.setJsDocNode(jsdocNode);
+                        ObjectProperty objectProp = plainProperty(pname.name, tt);
+                        objectProp.setComputed(pname.computed);
+                        elems.add(objectProp);
                     }
                 }
             }
 
             if (this.inUseStrictDirective && propertyName != null) {
                 switch (entryKind) {
-                case PROP_ENTRY:
-                case METHOD_ENTRY:
+                case LITERAL:
+                case METHOD:
                     if (getterNames.contains(propertyName)
                             || setterNames.contains(propertyName)) {
                         addError("msg.dup.obj.lit.prop.strict", propertyName);
@@ -3423,13 +3425,13 @@ public class Parser
                     getterNames.add(propertyName);
                     setterNames.add(propertyName);
                     break;
-                case GET_ENTRY:
+                case GET:
                     if (getterNames.contains(propertyName)) {
                         addError("msg.dup.obj.lit.prop.strict", propertyName);
                     }
                     getterNames.add(propertyName);
                     break;
-                case SET_ENTRY:
+                case SET:
                     if (setterNames.contains(propertyName)) {
                         addError("msg.dup.obj.lit.prop.strict", propertyName);
                     }
@@ -3458,34 +3460,54 @@ public class Parser
         return pn;
     }
 
-    private AstNode objliteralProperty() throws IOException {
-        AstNode pname;
+    private static class ObjectPropertyName {
+        AstNode name;
+        boolean computed;
+
+        public ObjectPropertyName(AstNode name, boolean computed) {
+            this.name = name;
+            this.computed = computed;
+        }
+    }
+
+    private ObjectPropertyName objliteralProperty() throws IOException {
+        AstNode name;
+        boolean computed = false;
         int tt = peekToken();
         switch(tt) {
           case Token.NAME:
-              pname = createNameNode();
+              name = createNameNode();
               break;
 
           case Token.STRING:
-              pname = createStringLiteral();
+              name = createStringLiteral();
               break;
 
           case Token.NUMBER:
-              pname = new NumberLiteral(
+              name = new NumberLiteral(
                       ts.tokenBeg, ts.getString(), ts.getNumber());
               break;
+
+          case Token.LB:
+              if (compilerEnv.getLanguageVersion() >= Context.VERSION_ES6) {
+                  computed = true;
+                  consumeToken();
+                  name = assignExpr();
+                  mustMatchToken(Token.RB, "msg.no.bracket.arg");
+                  break;
+              }
 
           default:
               if (compilerEnv.isReservedKeywordAsIdentifier()
                       && TokenStream.isKeyword(ts.getString())) {
                   // convert keyword to property name, e.g. ({if: 1})
-                  pname = createNameNode();
+                  name = createNameNode();
                   break;
               }
               return null;
         }
 
-        return pname;
+        return new ObjectPropertyName(name, computed);
     }
 
     private ObjectProperty plainProperty(AstNode property, int ptt)
@@ -3512,7 +3534,7 @@ public class Parser
         return pn;
     }
 
-    private ObjectProperty methodDefinition(int pos, AstNode propName, int entryKind)
+    private ObjectProperty methodDefinition(int pos, AstNode propName, PropertyEntryKind entryKind)
         throws IOException
     {
         FunctionNode fn = function(FunctionNode.FUNCTION_EXPRESSION);
@@ -3523,15 +3545,15 @@ public class Parser
         }
         ObjectProperty pn = new ObjectProperty(pos);
         switch (entryKind) {
-        case GET_ENTRY:
+        case GET:
             pn.setIsGetterMethod();
             fn.setFunctionIsGetterMethod();
             break;
-        case SET_ENTRY:
+        case SET:
             pn.setIsSetterMethod();
             fn.setFunctionIsSetterMethod();
             break;
-        case METHOD_ENTRY:
+        case METHOD:
             pn.setIsNormalMethod();
             fn.setFunctionIsNormalMethod();
             break;

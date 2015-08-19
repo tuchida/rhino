@@ -394,6 +394,18 @@ public class NodeTransformer
                 }
                 break;
               }
+
+              case Token.OBJECTLIT: {
+                  Object[] properties = (Object[])node.getProp(Node.OBJECT_IDS_PROP);
+                  for (Object prop : properties) {
+                      if (prop instanceof Node) {
+                          transformCompilationUnit_r(tree, (Node)prop, scope,
+                                                     createScopeObjects,
+                                                     inStrictMode);
+                      }
+                  }
+                  break;
+              }
             }
 
             transformCompilationUnit_r(tree, node,

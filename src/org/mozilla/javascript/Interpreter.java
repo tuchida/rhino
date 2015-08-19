@@ -1765,15 +1765,33 @@ switch (op) {
         sDbl[stackTop] = i + 1;
         continue Loop;
     }
+    case Icode_LITERAL_KEY_NEW: {
+        ++stackTop;
+        stack[stackTop] = new Object[indexReg];
+        sDbl[stackTop] = 0;
+        continue Loop;
+    }
+    case Icode_LITERAL_KEY_SET : {
+        Object value = stack[stackTop];
+        if (value == DBL_MRK) value = ScriptRuntime.wrapNumber(sDbl[stackTop]);
+        --stackTop;
+        int i = (int)sDbl[stackTop];
+        ((Object[])stack[stackTop - 2])[i] = ScriptRuntime.toPropertyKey(value, cx);
+        continue Loop;
+    }
     case Token.ARRAYLIT :
     case Icode_SPARE_ARRAYLIT :
     case Token.OBJECTLIT : {
         Object[] data = (Object[])stack[stackTop];
         --stackTop;
         int[] getterSetters = (int[])stack[stackTop];
+        Object[] ids = null;
+        if (op == Token.OBJECTLIT) {
+            --stackTop;
+            ids = (Object[])stack[stackTop];
+        }
         Object val;
         if (op == Token.OBJECTLIT) {
-            Object[] ids = (Object[])frame.idata.literalIds[indexReg];
             val = ScriptRuntime.newObjectLiteral(ids, data, getterSetters, cx,
                     frame.scope);
         } else {

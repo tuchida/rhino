@@ -102,6 +102,14 @@ public class ObjectProperty extends InfixExpression {
         return isGetterMethod() || isSetterMethod() || isNormalMethod();
     }
 
+    public boolean isComputed() {
+        return computed;
+    }
+
+    public void setComputed(boolean computed) {
+        this.computed = computed;
+    }
+
     @Override
     public String toSource(int depth) {
         StringBuilder sb = new StringBuilder();
@@ -112,11 +120,19 @@ public class ObjectProperty extends InfixExpression {
         } else if (isSetterMethod()) {
             sb.append("set ");
         }
+        if (computed) {
+            sb.append("[");
+        }
         sb.append(left.toSource(getType()==Token.COLON ? 0 : depth));
+        if (computed) {
+            sb.append("]");
+        }
         if (type == Token.COLON) {
             sb.append(": ");
         }
         sb.append(right.toSource(getType()==Token.COLON ? 0 : depth+1));
         return sb.toString();
     }
+
+    private boolean computed;
 }
