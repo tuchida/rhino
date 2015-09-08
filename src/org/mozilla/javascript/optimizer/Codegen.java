@@ -757,7 +757,8 @@ public class Codegen implements Evaluator
         final int Do_getParamOrVarName    = 3;
         final int Do_getEncodedSource     = 4;
         final int Do_getParamOrVarConst   = 5;
-        final int SWITCH_COUNT            = 6;
+        final int Do_getFunctionKind      = 6;
+        final int SWITCH_COUNT            = 7;
 
         for (int methodIndex = 0; methodIndex != SWITCH_COUNT; ++methodIndex) {
             if (methodIndex == Do_getEncodedSource && encodedSource == null) {
@@ -801,6 +802,11 @@ public class Codegen implements Evaluator
                 cfw.startMethod("getEncodedSource", "()Ljava/lang/String;",
                                 ACC_PUBLIC);
                 cfw.addPush(encodedSource);
+                break;
+              case Do_getFunctionKind:
+                methodLocals = 1; // Only this
+                cfw.startMethod("getFunctionKind", "()I",
+                                ACC_PUBLIC);
                 break;
               default:
                 throw Kit.codeBug();
@@ -942,6 +948,12 @@ public class Codegen implements Evaluator
                                   "substring",
                                   "(II)Ljava/lang/String;");
                     cfw.add(ByteCode.ARETURN);
+                    break;
+
+                  case Do_getFunctionKind:
+                    // Push number of function kind
+                    cfw.addPush(BaseFunction.mappingFunctionKind(n));
+                    cfw.add(ByteCode.IRETURN);
                     break;
 
                   default:
@@ -1622,18 +1634,13 @@ class BodyCodegen
 
 
         String debugVariableName;
-        boolean isArrow = false;
-        if (scriptOrFn instanceof FunctionNode) {
-            isArrow = ((FunctionNode)scriptOrFn).getFunctionType() == FunctionNode.ARROW_FUNCTION;
-        }
         if (fnCurrent != null) {
             debugVariableName = "activation";
             cfw.addALoad(funObjLocal);
             cfw.addALoad(variableObjectLocal);
             cfw.addALoad(argsLocal);
-            String methodName = isArrow ? "createArrowFunctionActivation" : "createFunctionActivation";
             cfw.addPush(scriptOrFn.isInStrictMode());
-            addScriptRuntimeInvoke(methodName,
+            addScriptRuntimeInvoke("createFunctionActivation",
                                    "(Lorg/mozilla/javascript/NativeFunction;"
                                    +"Lorg/mozilla/javascript/Scriptable;"
                                    +"[Ljava/lang/Object;"

@@ -67,6 +67,7 @@ final class InterpreterData implements Serializable, DebuggableScript
     String[] argNames;
     boolean[] argIsConst;
     int argCount;
+    int functionKind;
 
     int itsMaxCalleeArgs;
 

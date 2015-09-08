@@ -176,5 +176,10 @@ final class InterpretedFunction extends NativeFunction implements Script
     {
         return idata.argIsConst[index];
     }
+
+    @Override
+    protected int getFunctionKind() {
+        return idata.functionKind;
+    }
 }
 

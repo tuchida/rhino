@@ -2758,11 +2758,7 @@ switch (op) {
             scope = fnOrScript.getParentScope();
 
             if (useActivation) {
-                if (idata.itsFunctionType == FunctionNode.ARROW_FUNCTION) {
-                    scope = ScriptRuntime.createArrowFunctionActivation(fnOrScript, scope, args, idata.isStrict);
-                } else {
-                    scope = ScriptRuntime.createFunctionActivation(fnOrScript, scope, args, idata.isStrict);
-                }
+                scope = ScriptRuntime.createFunctionActivation(fnOrScript, scope, args, idata.isStrict);
             }
         } else {
             scope = callerScope;

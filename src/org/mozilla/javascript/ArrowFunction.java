@@ -44,8 +44,8 @@ public class ArrowFunction extends BaseFunction {
     }
 
     @Override
-    public Scriptable construct(Context cx, Scriptable scope, Object[] args) {
-        throw ScriptRuntime.typeError1("msg.not.ctor", decompile(0, 0));
+    protected int getFunctionKind() {
+        return BaseFunction.ARROW;
     }
 
     @Override

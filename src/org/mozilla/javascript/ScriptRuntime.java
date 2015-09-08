@@ -3462,15 +3462,7 @@ public class ScriptRuntime {
                                                       Object[] args,
                                                       boolean isStrict)
     {
-        return new NativeCall(funObj, scope, args, false, isStrict);
-    }
-
-    public static Scriptable createArrowFunctionActivation(NativeFunction funObj,
-                                                           Scriptable scope,
-                                                           Object[] args,
-                                                           boolean isStrict)
-    {
-        return new NativeCall(funObj, scope, args, true, isStrict);
+        return new NativeCall(funObj, scope, args, isStrict);
     }
 
     public static void enterActivationFunction(Context cx,

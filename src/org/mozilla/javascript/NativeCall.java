@@ -28,7 +28,7 @@ public final class NativeCall extends IdScriptableObject
 
     NativeCall() { }
 
-    NativeCall(NativeFunction function, Scriptable scope, Object[] args, boolean isArrow, boolean isStrict)
+    NativeCall(NativeFunction function, Scriptable scope, Object[] args, boolean isStrict)
     {
         this.function = function;
 
@@ -52,7 +52,7 @@ public final class NativeCall extends IdScriptableObject
 
         // initialize "arguments" property but only if it was not overridden by
         // the parameter with the same name
-        if (!super.has("arguments", this) && !isArrow) {
+        if (!super.has("arguments", this) && function.getFunctionKind() != BaseFunction.ARROW) {
             arguments = new Arguments(this);
             defineProperty("arguments", arguments, PERMANENT);
         }

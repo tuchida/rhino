@@ -167,6 +167,7 @@ class CodeGenerator extends Icode {
         itsData.argNames = scriptOrFn.getParamAndVarNames();
         itsData.argIsConst = scriptOrFn.getParamAndVarConst();
         itsData.argCount = scriptOrFn.getParamCount();
+        itsData.functionKind = BaseFunction.mappingFunctionKind(scriptOrFn);
 
         itsData.encodedSourceStart = scriptOrFn.getEncodedSourceStart();
         itsData.encodedSourceEnd = scriptOrFn.getEncodedSourceEnd();

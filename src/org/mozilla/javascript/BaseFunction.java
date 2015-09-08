@@ -6,6 +6,9 @@
 
 package org.mozilla.javascript;
 
+import org.mozilla.javascript.ast.ScriptNode;
+import org.mozilla.javascript.ast.FunctionNode;
+
 /**
  * The base class for Function objects
  * See ECMA 15.3.
@@ -398,10 +401,34 @@ public class BaseFunction extends IdScriptableObject implements Function
      */
     public Scriptable createObject(Context cx, Scriptable scope)
     {
+        if (getFunctionKind() != NORMAL) {
+            throw ScriptRuntime.typeError1("msg.not.ctor", getFunctionName());
+        }
         Scriptable newInstance = new NativeObject();
         newInstance.setPrototype(getClassPrototype());
         newInstance.setParentScope(getParentScope());
         return newInstance;
+    }
+
+    public static final int NORMAL = 0;
+    public static final int METHOD = 1;
+    public static final int ARROW = 2;
+
+    protected int getFunctionKind() {
+        return NORMAL;
+    }
+
+    public static int mappingFunctionKind(ScriptNode node) {
+        if (node instanceof FunctionNode) {
+            FunctionNode fnNode = (FunctionNode)node;
+            if (fnNode.getFunctionType() == FunctionNode.ARROW_FUNCTION) {
+                return ARROW;
+            }
+            if (fnNode.isMethod()) {
+                return METHOD;
+            }
+        }
+        return NORMAL;
     }
 
     /**
@@ -439,6 +466,9 @@ public class BaseFunction extends IdScriptableObject implements Function
     }
 
     protected boolean hasPrototypeProperty() {
+        if (getFunctionKind() != NORMAL) {
+            return false;
+        }
         return prototypeProperty != null || this instanceof NativeFunction;
     }
 
