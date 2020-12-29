@@ -93,9 +93,7 @@ final class NativeBigInt extends IdScriptableObject
                 // toLocaleString is just an alias for toString for now
                 int base = (args.length == 0 || args[0] == Undefined.instance)
                     ? 10 : ScriptRuntime.toInt32(args[0]);
-                // TODO
-                // return ScriptRuntime.bigIntToString(value, base);
-                return "";
+                return ScriptRuntime.bigIntToString(value, base);
             }
 
           case Id_toSource:
@@ -115,9 +113,7 @@ final class NativeBigInt extends IdScriptableObject
 
     @Override
     public String toString() {
-        // TODO
-        // return ScriptRuntime.bigIntToString(bigIntValue, 10);
-        return "";
+        return ScriptRuntime.bigIntToString(bigIntValue, 10);
     }
 
 // #string_id_map#
