@@ -69,16 +69,14 @@ final class NativeBigInt extends IdScriptableObject
         }
         int id = f.methodId();
         if (id == Id_constructor) {
+            if (thisObj == null) {
+                // new BigInt(val) throws TypeError.
+                throw ScriptRuntime.typeErrorById("msg.not.ctor", BIG_INT_TAG);
+            }
             BigInteger val = (args.length >= 1)
                 ? ScriptRuntime.toBigInt(args[0]) : BigInteger.ZERO;
-            if (thisObj == null) {
-                // new BigInt(val) creates a new BigInt object.
-                return new NativeBigInt(val);
-            }
-            // TODO
-            // // BigInt(val) converts val to a BigInt value.
-            // return ScriptRuntime.wrapBigInt(val);
-            return new NativeBigInt(val);
+            // BigInt(val) converts val to a BigInteger value.
+            return val;
 
         } else if (id < Id_constructor) {
             return execConstructorCall(id, args);
@@ -104,9 +102,7 @@ final class NativeBigInt extends IdScriptableObject
               return "(new BigInt("+ScriptRuntime.toString(value)+"))";
 
           case Id_valueOf:
-              // TODO
-              // return ScriptRuntime.wrapBigInt(value);
-              return ScriptRuntime.wrapNumber(0.0);
+              return value;
 
           default: throw new IllegalArgumentException(String.valueOf(id));
         }
