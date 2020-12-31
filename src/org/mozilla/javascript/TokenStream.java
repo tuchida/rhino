@@ -8,6 +8,7 @@ package org.mozilla.javascript;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigInteger;
 
 /**
  * This class implements the JavaScript scanner.
@@ -68,6 +69,9 @@ class TokenStream
 
             case Token.NUMBER:
                 return "NUMBER " + this.number;
+
+            case Token.BIGINT:
+                return "BIGINT " + this.bigInt.toString();
             }
 
             return name;
@@ -445,10 +449,12 @@ class TokenStream
     }
 
     final double getNumber() { return number; }
-    final boolean isNumberBinary() { return isBinary; }
-    final boolean isNumberOldOctal() { return isOldOctal; }
-    final boolean isNumberOctal() { return isOctal; }
-    final boolean isNumberHex() { return isHex; }
+    final BigInteger getBigInt() { return bigInt; }
+
+    final boolean isNumericBinary() { return isBinary; }
+    final boolean isNumericOldOctal() { return isOldOctal; }
+    final boolean isNumericOctal() { return isOctal; }
+    final boolean isNumericHex() { return isHex; }
 
     final boolean eof() { return hitEOF; }
 
@@ -657,8 +663,12 @@ class TokenStream
                 }
 
                 boolean isInteger = true;
+                boolean isBigInt = false;
 
-                if (base == 10 && (c == '.' || c == 'e' || c == 'E')) {
+                if (c == 'n') {
+                    isBigInt = true;
+                    c = getChar();
+                } else if (base == 10 && (c == '.' || c == 'e' || c == 'E')) {
                     isInteger = false;
                     if (c == '.') {
                         do {
@@ -686,6 +696,11 @@ class TokenStream
                 ungetChar(c);
                 String numString = getStringFromBuffer();
                 this.string = numString;
+
+                if (isBigInt) {
+                    this.bigInt = new BigInteger(numString, base);
+                    return Token.BIGINT;
+                }
 
                 double dval;
                 if (base == 10 && !isInteger) {
@@ -1813,6 +1828,7 @@ class TokenStream
     // code.
     private String string = "";
     private double number;
+    private BigInteger bigInt;
     private boolean isBinary;
     private boolean isOldOctal;
     private boolean isOctal;
