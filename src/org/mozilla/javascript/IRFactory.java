@@ -15,6 +15,7 @@ import org.mozilla.javascript.ast.ArrayLiteral;
 import org.mozilla.javascript.ast.Assignment;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.BigIntLiteral;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.BreakStatement;
 import org.mozilla.javascript.ast.CatchClause;
@@ -140,6 +141,8 @@ public final class IRFactory extends Parser
               return transformArrayComp((ArrayComprehension)node);
           case Token.ARRAYLIT:
               return transformArrayLiteral((ArrayLiteral)node);
+          case Token.BIGINT:
+              return transformBigInt((BigIntLiteral)node);
           case Token.BLOCK:
               return transformBlock(node);
           case Token.BREAK:
@@ -463,6 +466,11 @@ public final class IRFactory extends Parser
             }
         }
         return left;
+    }
+
+    private Node transformBigInt(BigIntLiteral node) {
+        decompiler.addBigInt(node.getBigInt());
+        return node;
     }
 
     private Node transformBlock(AstNode node) {
@@ -2425,6 +2433,9 @@ public final class IRFactory extends Parser
               break;
           case Token.NUMBER:
               decompiler.addNumber(((NumberLiteral)node).getNumber());
+              break;
+          case Token.BIGINT:
+              decompiler.addBigInt(((BigIntLiteral)node).getBigInt());
               break;
           case Token.GETPROP:
               decompilePropertyGet((PropertyGet)node);

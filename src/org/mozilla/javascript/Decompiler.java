@@ -6,6 +6,8 @@
 
 package org.mozilla.javascript;
 
+import java.math.BigInteger;
+
 import org.mozilla.javascript.ast.FunctionNode;
 
 /**
@@ -188,6 +190,12 @@ public class Decompiler
         }
     }
 
+    void addBigInt(BigInteger n)
+    {
+        addToken(Token.BIGINT);
+        appendString(n.toString());
+    }
+
     private void appendString(String str)
     {
         int L = str.length();
@@ -348,6 +356,10 @@ public class Decompiler
 
             case Token.NUMBER:
                 i = printSourceNumber(source, i + 1, result);
+                continue;
+
+            case Token.BIGINT:
+                i = printSourceBigInt(source, i + 1, result);
                 continue;
 
             case Token.TRUE:
@@ -894,6 +906,26 @@ public class Decompiler
             sb.append(ScriptRuntime.numberToString(number, 10));
         }
         return offset;
+    }
+
+    /**
+     * @see #printSourceString(String source, int offset, boolean asQuotedString, StringBuilder sb)
+     */
+    private static int printSourceBigInt(String source, int offset,
+                                         StringBuilder sb)
+    {
+        int length = source.charAt(offset);
+        ++offset;
+        if ((0x8000 & length) != 0) {
+            length = ((0x7FFF & length) << 16) | source.charAt(offset);
+            ++offset;
+        }
+        if (sb != null) {
+            String str = source.substring(offset, offset + length);
+            sb.append(str);
+            sb.append('n');
+        }
+        return offset + length;
     }
 
     private char[] sourceBuffer = new char[128];
