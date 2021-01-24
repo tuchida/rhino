@@ -61,7 +61,6 @@ public class Test262SuiteTest {
 
     static final Set<String> UNSUPPORTED_FEATURES = new HashSet<>(Arrays.asList(
             "Atomics",
-            "BigInt",
             "IsHTMLDDA",
             "Promise.prototype.finally",
             "Proxy",
