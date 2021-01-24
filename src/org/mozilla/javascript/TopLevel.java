@@ -62,7 +62,9 @@ public class TopLevel extends IdScriptableObject {
         /** The built-in Symbol type. */
         Symbol,
         /** The built-in GeneratorFunction type. */
-        GeneratorFunction
+        GeneratorFunction,
+        /** The built-in BigInt type. */
+        BigInt
     }
 
     /**
