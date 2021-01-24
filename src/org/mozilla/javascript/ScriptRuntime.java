@@ -3347,6 +3347,8 @@ public class ScriptRuntime {
                 }
             }
             return false;
+        } else if (x instanceof BigInteger) {
+            return eqBigInt((BigInteger)x, y);
         } else if (x instanceof Number) {
             return eqNumber(((Number)x).doubleValue(), y);
         } else if (x == y) {
@@ -3399,6 +3401,8 @@ public class ScriptRuntime {
                 }
                 double d = ((Boolean)y).booleanValue() ? 1.0 : 0.0;
                 return eqNumber(d, x);
+            } else if (y instanceof BigInteger) {
+                return eqBigInt((BigInteger)y, x);
             } else if (y instanceof Number) {
                 return eqNumber(((Number)y).doubleValue(), x);
             } else if (y instanceof CharSequence) {
@@ -3435,6 +3439,9 @@ public class ScriptRuntime {
     public static boolean sameZero(Object x, Object y) {
         if (!typeof(x).equals(typeof(y))) {
             return false;
+        }
+        if (x instanceof BigInteger) {
+            return x.equals(y);
         }
         if (x instanceof Number) {
             if (isNaN(x) && isNaN(y)) {
@@ -3474,6 +3481,8 @@ public class ScriptRuntime {
         for (;;) {
             if (y == null || y == Undefined.instance) {
                 return false;
+            } else if (y instanceof BigInteger) {
+                return eqBigInt((BigInteger)y, x);
             } else if (y instanceof Number) {
                 return x == ((Number)y).doubleValue();
             } else if (y instanceof CharSequence) {
@@ -3498,6 +3507,59 @@ public class ScriptRuntime {
         }
     }
 
+    static boolean eqBigInt(BigInteger x, Object y)
+    {
+        for (;;) {
+            if (y == null || y == Undefined.instance) {
+                return false;
+            } else if (y instanceof BigInteger) {
+                return x.equals(y);
+            } else if (y instanceof Number) {
+                return eqBigInt(x, ((Number)y).doubleValue());
+            } else if (y instanceof CharSequence) {
+                BigInteger biy;
+                try {
+                    biy = toBigInt(y);
+                } catch (EcmaError e) {
+                    return false;
+                }
+                return x.equals(biy);
+            } else if (y instanceof Boolean) {
+                BigInteger biy = ((Boolean) y).booleanValue() ? BigInteger.ONE : BigInteger.ZERO;
+                return x.equals(biy);
+            } else if (isSymbol(y)) {
+                return false;
+            } else if (y instanceof Scriptable) {
+                if (y instanceof ScriptableObject) {
+                    Object test = ((ScriptableObject)y).equivalentValues(x);
+                    if (test != Scriptable.NOT_FOUND) {
+                        return ((Boolean)test).booleanValue();
+                    }
+                }
+                y = toPrimitive(y);
+            } else {
+                warnAboutNonJSObject(y);
+                return false;
+            }
+        }
+    }
+
+    private static boolean eqBigInt(BigInteger x, double y)
+    {
+        if (Double.isNaN(y) || Double.isInfinite(y)) {
+            return false;
+        }
+
+        double d = Math.ceil(y);
+        if (d != y) {
+            return false;
+        }
+
+        BigDecimal bdx = new BigDecimal(x);
+        BigDecimal bdy = new BigDecimal(d, MathContext.UNLIMITED);
+        return bdx.compareTo(bdy) == 0;
+    }
+
     private static boolean eqString(CharSequence x, Object y)
     {
         for (;;) {
@@ -3506,6 +3568,14 @@ public class ScriptRuntime {
             } else if (y instanceof CharSequence) {
                 CharSequence c = (CharSequence)y;
                 return x.length() == c.length() && x.toString().equals(c.toString());
+            } else if (y instanceof BigInteger) {
+                BigInteger bix;
+                try {
+                    bix = toBigInt(x);
+                } catch (EcmaError e) {
+                    return false;
+                }
+                return bix.equals(y);
             } else if (y instanceof Number) {
                 return toNumber(x.toString()) == ((Number)y).doubleValue();
             } else if (y instanceof Boolean) {
@@ -3541,8 +3611,12 @@ public class ScriptRuntime {
             if ((x == Undefined.instance && y == Undefined.SCRIPTABLE_UNDEFINED)
                 || (x == Undefined.SCRIPTABLE_UNDEFINED && y == Undefined.instance)) return true;
             return false;
-        } else if (x instanceof Number) {
-            if (y instanceof Number) {
+        } else if (x instanceof BigInteger) {
+            if (y instanceof BigInteger) {
+                return x.equals(y);
+            }
+        } else if (x instanceof Number && !(x instanceof BigInteger)) {
+            if (y instanceof Number && !(y instanceof BigInteger)) {
                 return ((Number)x).doubleValue() == ((Number)y).doubleValue();
             }
         } else if (x instanceof CharSequence) {
