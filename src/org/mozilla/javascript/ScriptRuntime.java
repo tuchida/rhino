@@ -3016,6 +3016,8 @@ public class ScriptRuntime {
             return (value instanceof Callable) ? "function" : "object";
         if (value instanceof CharSequence)
             return "string";
+        if (value instanceof BigInteger)
+            return "bigint";
         if (value instanceof Number)
             return "number";
         if (value instanceof Boolean)
