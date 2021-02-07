@@ -429,6 +429,8 @@ public class ScriptRuntime {
     public static double toNumber(Object val)
     {
         for (;;) {
+            if (val instanceof BigInteger)
+                throw typeErrorById("msg.cant.convert.to.number", "BigInt");
             if (val instanceof Number)
                 return ((Number) val).doubleValue();
             if (val == null)
