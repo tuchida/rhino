@@ -3226,25 +3226,32 @@ public class ScriptRuntime {
                                                int incrDecrMask)
     {
         final boolean post = (incrDecrMask & Node.POST_FLAG) != 0;
-        double number;
+
+        Number number;
         if (value instanceof Number) {
-            number = ((Number)value).doubleValue();
+            number = (Number)value;
         } else {
-            number = toNumber(value);
-            if (post) {
-                // convert result to number
-                value = wrapNumber(number);
+            number = toNumeric(value);
+        }
+
+        Number result;
+        if (number instanceof BigInteger) {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = ((BigInteger)number).add(BigInteger.ONE);
+            } else {
+                result = ((BigInteger)number).subtract(BigInteger.ONE);
+            }
+        } else {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = number.doubleValue() + 1.0;
+            } else {
+                result = number.doubleValue() - 1.0;
             }
         }
-        if ((incrDecrMask & Node.DECR_FLAG) == 0) {
-            ++number;
-        } else {
-            --number;
-        }
-        Number result = wrapNumber(number);
+
         target.put(id, protoChainStart, result);
         if (post) {
-            return value;
+            return number;
         }
         return result;
     }
@@ -3265,25 +3272,32 @@ public class ScriptRuntime {
     {
         Object value = getObjectElem(obj, index, cx, scope);
         final boolean post = (incrDecrMask & Node.POST_FLAG) != 0;
-        double number;
+
+        Number number;
         if (value instanceof Number) {
-            number = ((Number)value).doubleValue();
+            number = (Number)value;
         } else {
-            number = toNumber(value);
-            if (post) {
-                // convert result to number
-                value = wrapNumber(number);
+            number = toNumeric(value);
+        }
+
+        Number result;
+        if (number instanceof BigInteger) {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = ((BigInteger)number).add(BigInteger.ONE);
+            } else {
+                result = ((BigInteger)number).subtract(BigInteger.ONE);
+            }
+        } else {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = number.doubleValue() + 1.0;
+            } else {
+                result = number.doubleValue() - 1.0;
             }
         }
-        if ((incrDecrMask & Node.DECR_FLAG) == 0) {
-            ++number;
-        } else {
-            --number;
-        }
-        Number result = wrapNumber(number);
+
         setObjectElem(obj, index, result, cx, scope);
         if (post) {
-            return value;
+            return number;
         }
         return result;
     }
@@ -3302,25 +3316,32 @@ public class ScriptRuntime {
     {
         Object value = ref.get(cx);
         boolean post = ((incrDecrMask & Node.POST_FLAG) != 0);
-        double number;
+
+        Number number;
         if (value instanceof Number) {
-            number = ((Number)value).doubleValue();
+            number = (Number)value;
         } else {
-            number = toNumber(value);
-            if (post) {
-                // convert result to number
-                value = wrapNumber(number);
+            number = toNumeric(value);
+        }
+
+        Number result;
+        if (number instanceof BigInteger) {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = ((BigInteger)number).add(BigInteger.ONE);
+            } else {
+                result = ((BigInteger)number).subtract(BigInteger.ONE);
+            }
+        } else {
+            if ((incrDecrMask & Node.DECR_FLAG) == 0) {
+                result = number.doubleValue() + 1.0;
+            } else {
+                result = number.doubleValue() - 1.0;
             }
         }
-        if ((incrDecrMask & Node.DECR_FLAG) == 0) {
-            ++number;
-        } else {
-            --number;
-        }
-        Number result = wrapNumber(number);
+
         ref.set(cx, scope, result);
         if (post) {
-            return value;
+            return number;
         }
         return result;
     }
