@@ -1248,19 +1248,11 @@ class BodyCodegen
             }
             break;
 
-            case Token.MUL:
-                visitArithmetic(node, ByteCode.DMUL, child, parent);
-                break;
-
             case Token.SUB:
-                visitArithmetic(node, ByteCode.DSUB, child, parent);
-                break;
-
+            case Token.MUL:
             case Token.DIV:
             case Token.MOD:
-                visitArithmetic(node, type == Token.DIV
-                    ? ByteCode.DDIV
-                    : ByteCode.DREM, child, parent);
+                visitArithmetic(node, type, child, parent);
                 break;
 
             case Token.EXP:
@@ -3434,26 +3426,55 @@ Else pass the JS object in the aReg and 0.0 in the dReg.
             || (type == Token.MUL);
     }
 
-    private void visitArithmetic(Node node, int opCode, Node child,
+    private void visitArithmetic(Node node, int type, Node child,
         Node parent)
     {
         int childNumberFlag = node.getIntProp(Node.ISNUMBER_PROP, -1);
         if (childNumberFlag != -1) {
             generateExpression(child, node);
             generateExpression(child.getNext(), node);
-            cfw.add(opCode);
+
+            switch (type) {
+            case Token.SUB:
+                cfw.add(ByteCode.DSUB);
+                break;
+            case Token.MUL:
+                cfw.add(ByteCode.DMUL);
+                break;
+            case Token.DIV:
+                cfw.add(ByteCode.DDIV);
+                break;
+            case Token.MOD:
+                cfw.add(ByteCode.DREM);
+                break;
+            default:
+                throw Kit.codeBug(Token.typeToName(type));
+            }
         }
         else {
             boolean childOfArithmetic = isArithmeticNode(parent);
             generateExpression(child, node);
             if (!isArithmeticNode(child))
-                addObjectToDouble();
+                addObjectToNumeric();
             generateExpression(child.getNext(), node);
             if (!isArithmeticNode(child.getNext()))
-                addObjectToDouble();
-            cfw.add(opCode);
-            if (!childOfArithmetic) {
-                addDoubleWrap();
+                addObjectToNumeric();
+
+            switch (type) {
+            case Token.SUB:
+                addScriptRuntimeInvoke("subtract", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+                break;
+            case Token.MUL:
+                addScriptRuntimeInvoke("multiply", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+                break;
+            case Token.DIV:
+                addScriptRuntimeInvoke("divide", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+                break;
+            case Token.MOD:
+                addScriptRuntimeInvoke("remainder", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
+                break;
+            default:
+                throw Kit.codeBug(Token.typeToName(type));
             }
         }
     }
@@ -3471,12 +3492,11 @@ Else pass the JS object in the aReg and 0.0 in the dReg.
 
             short reg = getNewWordLocal();
             cfw.addAStore(reg);
-            addObjectToDouble();
+            addObjectToNumeric();
             cfw.addALoad(reg);
-            addObjectToDouble();
+            addObjectToNumeric();
 
-            cfw.addInvoke(ByteCode.INVOKESTATIC, "java/lang/Math", "pow", "(DD)D");
-            addDoubleWrap();
+            addScriptRuntimeInvoke("exponentiate", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;");
         }
     }
 
