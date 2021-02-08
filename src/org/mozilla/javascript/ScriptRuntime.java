@@ -3814,10 +3814,8 @@ public class ScriptRuntime {
 
     public static boolean cmp_LT(Object val1, Object val2)
     {
-        double d1, d2;
         if (val1 instanceof Number && val2 instanceof Number) {
-            d1 = ((Number)val1).doubleValue();
-            d2 = ((Number)val2).doubleValue();
+            return cmp_LT((Number)val1, (Number)val2);
         } else {
             if ((val1 instanceof Symbol) || (val2 instanceof Symbol)) {
                 throw typeErrorById("msg.compare.symbol");
@@ -3829,18 +3827,50 @@ public class ScriptRuntime {
             if (val1 instanceof CharSequence && val2 instanceof CharSequence) {
                 return val1.toString().compareTo(val2.toString()) < 0;
             }
-            d1 = toNumber(val1);
-            d2 = toNumber(val2);
+            return cmp_LT(toNumeric(val1), toNumeric(val2));
         }
-        return d1 < d2;
+    }
+
+    public static boolean cmp_LT(Number val1, Number val2)
+    {
+        if (val1 instanceof BigInteger && val2 instanceof BigInteger) {
+            return ((BigInteger)val1).compareTo((BigInteger)val2) < 0;
+        } else if (val1 instanceof BigInteger || val2 instanceof BigInteger) {
+            BigDecimal bd1;
+            if (val1 instanceof BigInteger) {
+                bd1 = new BigDecimal((BigInteger)val1);
+            } else {
+                double d = val1.doubleValue();
+                if (Double.isNaN(d) || d == Double.POSITIVE_INFINITY) {
+                    return false;
+                } else if (d == Double.NEGATIVE_INFINITY) {
+                    return true;
+                }
+                bd1 = new BigDecimal(d, MathContext.UNLIMITED);
+            }
+
+            BigDecimal bd2;
+            if (val2 instanceof BigInteger) {
+                bd2 = new BigDecimal((BigInteger)val2);
+            } else {
+                double d = val2.doubleValue();
+                if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY) {
+                    return false;
+                } else if (d == Double.POSITIVE_INFINITY) {
+                    return true;
+                }
+                bd2 = new BigDecimal(d, MathContext.UNLIMITED);
+            }
+
+            return bd1.compareTo(bd2) < 0;
+        }
+        return val1.doubleValue() < val2.doubleValue();
     }
 
     public static boolean cmp_LE(Object val1, Object val2)
     {
-        double d1, d2;
         if (val1 instanceof Number && val2 instanceof Number) {
-            d1 = ((Number)val1).doubleValue();
-            d2 = ((Number)val2).doubleValue();
+            return cmp_LE((Number)val1, (Number)val2);
         } else {
             if ((val1 instanceof Symbol) || (val2 instanceof Symbol)) {
                 throw typeErrorById("msg.compare.symbol");
@@ -3852,10 +3882,44 @@ public class ScriptRuntime {
             if (val1 instanceof CharSequence && val2 instanceof CharSequence) {
                 return val1.toString().compareTo(val2.toString()) <= 0;
             }
-            d1 = toNumber(val1);
-            d2 = toNumber(val2);
+            return cmp_LE(toNumeric(val1), toNumeric(val2));
         }
-        return d1 <= d2;
+    }
+
+    public static boolean cmp_LE(Number val1, Number val2)
+    {
+        if (val1 instanceof BigInteger && val2 instanceof BigInteger) {
+            return ((BigInteger)val1).compareTo((BigInteger)val2) <= 0;
+        } else if (val1 instanceof BigInteger || val2 instanceof BigInteger) {
+            BigDecimal bd1;
+            if (val1 instanceof BigInteger) {
+                bd1 = new BigDecimal((BigInteger)val1);
+            } else {
+                double d = val1.doubleValue();
+                if (Double.isNaN(d) || d == Double.POSITIVE_INFINITY) {
+                    return false;
+                } else if (d == Double.NEGATIVE_INFINITY) {
+                    return true;
+                }
+                bd1 = new BigDecimal(d, MathContext.UNLIMITED);
+            }
+
+            BigDecimal bd2;
+            if (val2 instanceof BigInteger) {
+                bd2 = new BigDecimal((BigInteger)val2);
+            } else {
+                double d = val2.doubleValue();
+                if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY) {
+                    return false;
+                } else if (d == Double.POSITIVE_INFINITY) {
+                    return true;
+                }
+                bd2 = new BigDecimal(d, MathContext.UNLIMITED);
+            }
+
+            return bd1.compareTo(bd2) <= 0;
+        }
+        return val1.doubleValue() <= val2.doubleValue();
     }
 
     // ------------------

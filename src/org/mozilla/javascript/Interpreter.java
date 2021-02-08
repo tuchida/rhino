@@ -2397,28 +2397,28 @@ switch (op) {
         {
             number_compare:
             {
-                double rDbl, lDbl;
+                Number rNum, lNum;
                 if (rhs == DOUBLE_MARK) {
-                    rDbl = sDbl[stackTop + 1];
-                    lDbl = stack_double(frame, stackTop);
+                    rNum = sDbl[stackTop + 1];
+                    lNum = stack_numeric(frame, stackTop);
                 } else if (lhs == DOUBLE_MARK) {
-                    rDbl = ScriptRuntime.toNumber(rhs);
-                    lDbl = sDbl[stackTop];
+                    rNum = ScriptRuntime.toNumeric(rhs);
+                    lNum = sDbl[stackTop];
                 } else {
                     break number_compare;
                 }
                 switch (op) {
                     case Token.GE:
-                        valBln = (lDbl >= rDbl);
+                        valBln = ScriptRuntime.cmp_LE(rNum, lNum);
                         break object_compare;
                     case Token.LE:
-                        valBln = (lDbl <= rDbl);
+                        valBln = ScriptRuntime.cmp_LE(lNum, rNum);
                         break object_compare;
                     case Token.GT:
-                        valBln = (lDbl > rDbl);
+                        valBln = ScriptRuntime.cmp_LT(rNum, lNum);
                         break object_compare;
                     case Token.LT:
-                        valBln = (lDbl < rDbl);
+                        valBln = ScriptRuntime.cmp_LT(lNum, rNum);
                         break object_compare;
                     default:
                         throw Kit.codeBug();
