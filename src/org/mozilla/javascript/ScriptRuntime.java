@@ -396,6 +396,9 @@ public class ScriptRuntime {
                 return false;
             if (val instanceof CharSequence)
                 return ((CharSequence) val).length() != 0;
+            if (val instanceof BigInteger) {
+                return !((BigInteger)val).equals(BigInteger.ZERO);
+            }
             if (val instanceof Number) {
                 double d = ((Number) val).doubleValue();
                 return (!Double.isNaN(d) && d != 0.0);

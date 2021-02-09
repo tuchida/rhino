@@ -3263,6 +3263,8 @@ switch (op) {
             return !Double.isNaN(d) && d != 0.0;
         } else if (x == null || x == Undefined.instance) {
             return false;
+        } else if (x instanceof BigInteger) {
+            return !((BigInteger)x).equals(BigInteger.ZERO);
         } else if (x instanceof Number) {
             double d = ((Number)x).doubleValue();
             return (!Double.isNaN(d) && d != 0.0);
