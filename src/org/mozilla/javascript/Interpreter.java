@@ -1397,9 +1397,7 @@ switch (op) {
         frame.result = undefined;
         break Loop;
     case Token.BITNOT : {
-        int rIntValue = stack_int32(frame, stackTop);
-        stack[stackTop] = DBL_MRK;
-        sDbl[stackTop] = ~rIntValue;
+        stackTop = doBitNOT(frame, stack, sDbl, stackTop);
         continue Loop;
     }
     case Token.BITAND :
@@ -2470,6 +2468,19 @@ switch (op) {
             break;
         }
 
+        if (result instanceof BigInteger) {
+            stack[stackTop] = result;
+        } else {
+            stack[stackTop] = DOUBLE_MARK;
+            sDbl[stackTop] = result.doubleValue();
+        }
+        return stackTop;
+    }
+
+    private static int doBitNOT(CallFrame frame, Object[] stack,
+                               double[] sDbl, int stackTop) {
+        Number value = stack_numeric(frame, stackTop);
+        Number result = ScriptRuntime.bitwiseNOT(value);
         if (result instanceof BigInteger) {
             stack[stackTop] = result;
         } else {

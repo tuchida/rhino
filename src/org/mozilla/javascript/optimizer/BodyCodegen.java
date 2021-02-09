@@ -1158,11 +1158,8 @@ class BodyCodegen
 
             case Token.BITNOT:
                 generateExpression(child, node);
-                addScriptRuntimeInvoke("toInt32", "(Ljava/lang/Object;)I");
-                cfw.addPush(-1);         // implement ~a as (a ^ -1)
-                cfw.add(ByteCode.IXOR);
-                cfw.add(ByteCode.I2D);
-                addDoubleWrap();
+                addObjectToNumeric();
+                addScriptRuntimeInvoke("bitwiseNOT", "(Ljava/lang/Number;)Ljava/lang/Number;");
                 break;
 
             case Token.VOID:
