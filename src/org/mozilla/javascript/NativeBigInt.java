@@ -7,6 +7,7 @@
 package org.mozilla.javascript;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * This class implements the BigInt native object.
@@ -37,9 +38,8 @@ final class NativeBigInt extends IdScriptableObject
     @Override
     protected void fillConstructorProperties(IdFunctionObject ctor)
     {
-        // TODO
-        // addIdFunctionProperty(ctor, BIG_INT_TAG, ConstructorId_asIntN, "asIntN", 1);
-        // addIdFunctionProperty(ctor, BIG_INT_TAG, ConstructorId_asUintN, "asUintN", 1);
+        addIdFunctionProperty(ctor, BIG_INT_TAG, ConstructorId_asIntN, "asIntN", 2);
+        addIdFunctionProperty(ctor, BIG_INT_TAG, ConstructorId_asUintN, "asUintN", 2);
 
         super.fillConstructorProperties(ctor);
     }
@@ -114,7 +114,46 @@ final class NativeBigInt extends IdScriptableObject
 
     private static Object execConstructorCall(int id, Object[] args)
     {
-        throw new IllegalArgumentException(String.valueOf(id));
+        switch (id) {
+        case ConstructorId_asIntN:
+        case ConstructorId_asUintN: {
+            int bits = ScriptRuntime.toIndex(args.length < 1 ? Undefined.instance : args[0]);
+            BigInteger bigInt = ScriptRuntime.toBigInt(args.length < 2 ? Undefined.instance : args[1]);
+
+            if (bits == 0) {
+                return BigInteger.ZERO;
+            }
+
+            byte[] bytes = bigInt.toByteArray();
+
+            int newBytesLen = (bits / Byte.SIZE) + 1;
+            if (newBytesLen > bytes.length) {
+                return bigInt;
+            }
+
+            byte[] newBytes = Arrays.copyOfRange(bytes, bytes.length - newBytesLen, bytes.length);
+
+            int mod = bits % Byte.SIZE;
+            switch (id) {
+            case ConstructorId_asIntN:
+                if (mod == 0) {
+                    newBytes[0] = newBytes[1] < 0 ? (byte)-1 : 0;
+                } else if ((newBytes[0] & (1 << (mod - 1))) != 0) {
+                    newBytes[0] |= -1 << mod;
+                } else {
+                    newBytes[0] &= (1 << mod) - 1;
+                }
+                break;
+            case ConstructorId_asUintN:
+                newBytes[0] &= (1 << mod) - 1;
+                break;
+            }
+            return new BigInteger(newBytes);
+        }
+
+        default:
+            throw new IllegalArgumentException(String.valueOf(id));
+        }
     }
 
     @Override
@@ -156,6 +195,9 @@ final class NativeBigInt extends IdScriptableObject
     }
 
     private static final int
+        ConstructorId_asIntN = -1,
+        ConstructorId_asUintN = -2,
+
         Id_constructor       = 1,
         Id_toString          = 2,
         Id_toLocaleString    = 3,
