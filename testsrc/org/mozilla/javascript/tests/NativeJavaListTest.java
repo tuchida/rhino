@@ -105,6 +105,38 @@ public class NativeJavaListTest extends TestCase {
         assertTrue(res.contains("2"));
     }
 
+    public void testSymbolIterator() {
+        List list = new ArrayList();
+        String script =
+            "var a = [];\n" +
+            "for (var e of value) a.push(e);\n" +
+            "a";
+
+        NativeArray resEmpty = (NativeArray) runScriptES6(script, list);
+        assertEquals(0, resEmpty.size());
+
+        Object o = new Object();
+        list.add("a");
+        list.add(123);
+        list.add(o);
+
+        {
+            NativeArray res = (NativeArray) runScriptES6(script, list);
+            assertEquals(3, res.size());
+            assertEquals("a", res.get(0));
+            assertEquals(123.0, Context.toNumber(res.get(1)));
+            assertEquals(o, res.get(2));
+        }
+
+        {
+            NativeArray res = (NativeArray) runScriptES6("Array.from(value)", list);
+            assertEquals(3, res.size());
+            assertEquals("a", res.get(0));
+            assertEquals(123.0, Context.toNumber(res.get(1)));
+            assertEquals(o, res.get(2));
+        }
+    }
+
     private int runScriptAsInt(String scriptSourceText, Object value) {
         return runScript(scriptSourceText, value, Context::toNumber).intValue();
     }
@@ -118,6 +150,15 @@ public class NativeJavaListTest extends TestCase {
             Scriptable scope = context.initStandardObjects(global);
             scope.put("value", scope, Context.javaToJS(value, scope));
             return convert.apply(context.evaluateString(scope, scriptSourceText, "", 1, null));
+        });
+    }
+
+    private Object runScriptES6(String scriptSourceText, Object value) {
+        return ContextFactory.getGlobal().call(context -> {
+            Scriptable scope = context.initStandardObjects(global);
+            context.setLanguageVersion(Context.VERSION_ES6);
+            scope.put("value", scope, Context.javaToJS(value, scope));
+            return context.evaluateString(scope, scriptSourceText, "", 1, null);
         });
     }
 }
