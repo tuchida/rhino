@@ -5,11 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.javascript;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class NativeJavaList extends NativeJavaObject {
 
     private List<Object> list;
+
+    static void init(ScriptableObject scope, boolean sealed) {
+        NativeJavaListIterator.init(scope, sealed);
+    }
 
     @SuppressWarnings("unchecked")
     public NativeJavaList(Scriptable scope, Object list) {
@@ -45,6 +50,9 @@ public class NativeJavaList extends NativeJavaObject {
         if (SymbolKey.IS_CONCAT_SPREADABLE.equals(key)) {
             return true;
         }
+        if (SymbolKey.ITERATOR.equals(key)) {
+            return true;
+        }
         return super.has(key, start);
     }
 
@@ -71,6 +79,9 @@ public class NativeJavaList extends NativeJavaObject {
         if (SymbolKey.IS_CONCAT_SPREADABLE.equals(key)) {
             return Boolean.TRUE;
         }
+        if (SymbolKey.ITERATOR.equals(key)) {
+            return symbol_iterator;
+        }
         return super.get(key, start);
     }
 
@@ -96,5 +107,58 @@ public class NativeJavaList extends NativeJavaObject {
 
     private boolean isWithValidIndex(int index) {
         return index >= 0  && index < list.size();
+    }
+
+    private static Callable symbol_iterator = (Context cx, Scriptable scope, Scriptable thisObj, Object[] args) -> {
+        if (!(thisObj instanceof NativeJavaList)) {
+            throw ScriptRuntime.typeErrorById("msg.incompat.call", SymbolKey.ITERATOR);
+        }
+        return new NativeJavaListIterator(scope, ((NativeJavaList)thisObj).list);
+    };
+
+    private static final class NativeJavaListIterator extends ES6Iterator {
+        private static final long serialVersionUID = 1L;
+        private static final String ITERATOR_TAG = "JavaListIterator";
+
+        static void init(ScriptableObject scope, boolean sealed) {
+            ES6Iterator.init(scope, sealed, new NativeJavaListIterator(), ITERATOR_TAG);
+        }
+
+        /**
+         * Only for constructing the prototype object.
+         */
+        private NativeJavaListIterator() {
+            super();
+        }
+
+        NativeJavaListIterator(Scriptable scope, List<Object> list) {
+            super(scope, ITERATOR_TAG);
+            this.iterator = list.iterator();
+        }
+
+        @Override
+        public String getClassName() {
+            return "Java List Iterator";
+        }
+
+        @Override
+        protected boolean isDone(Context cx, Scriptable scope) {
+            return !iterator.hasNext();
+        }
+
+        @Override
+        protected Object nextValue(Context cx, Scriptable scope) {
+            if (!iterator.hasNext()) {
+                return Undefined.instance;
+            }
+            return iterator.next();
+        }
+
+        @Override
+        protected String getTag() {
+            return ITERATOR_TAG;
+        }
+
+        private Iterator<Object> iterator;
     }
 }
